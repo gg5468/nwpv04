@@ -1,24 +1,85 @@
 #include "nwpwin.h"
 
-// TODO: prepare class ("STATIC") for a ship
+class ship : public vsite::nwp::window
+{
+public:
+	std::string class_name() override {
+		return "STATIC";
+	}
+	POINT p;
+	RECT parent_rect;
+	int size;
+	bool is_moving = false;
+	void set_is_moving(bool flag) {
+		DWORD style;
+		if (flag) {
+			style = WS_CHILD | WS_VISIBLE;
+		}
+		else {
+			style = WS_CHILD | WS_VISIBLE | WS_BORDER;
+		}
+		SetWindowLong(*this, GWL_STYLE, style);
+		SetWindowPos(*this, nullptr, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+
+		is_moving = flag;
+	}
+	void move(int vk)
+	{
+		RECT r;
+		GetClientRect(*this, &r);
+		int speed = GetAsyncKeyState(VK_CONTROL) ? 50 : 10;
+
+		switch (vk)
+		{
+		case(VK_UP):
+			p.y = max(p.y - speed, parent_rect.top);
+			break;
+		case(VK_DOWN):
+			p.y = min(p.y + speed, parent_rect.bottom - size);
+			break;
+		case(VK_LEFT):
+			p.x = max(p.x - speed, parent_rect.left);
+			break;
+		case(VK_RIGHT):
+			p.x = min(p.x + speed, parent_rect.right - size);
+			break;
+		}
+		
+		SetWindowPos(*this, 0, p.x, p.y, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+	}
+};
 
 class main_window : public vsite::nwp::window
 {
 protected:
-	void on_left_button_down(POINT p) override { 
-		// TODO: create ship if it doesn't exist yet
-		// TODO: change current location
+	void on_left_button_down(POINT p) override {
+		if (!s)
+		{
+			s.size = 20;
+			s.p = p;
+			GetClientRect(*this, &s.parent_rect);
+			s.create(*this, WS_CHILD | WS_VISIBLE | WS_BORDER, " X", 0, p.x, p.y, s.size, s.size);
+		}
+	}
+	bool is_arrow_key(int vk) {
+		return vk == VK_UP || vk == VK_DOWN || vk == VK_RIGHT || vk == VK_LEFT;
 	}
 	void on_key_up(int vk) override {
-		// TODO: mark ship (if exists) as "not moving"
+		if (is_arrow_key(vk) && s) {
+			s.set_is_moving(false);
+		}
 	}
 	void on_key_down(int vk) override {
-		// TODO: if ship exists, move it depending on key and mark as "moving"
+		if (is_arrow_key(vk) && s) {
+			s.set_is_moving(true);
+			s.move(vk);
+		}
 	}
 	void on_destroy() override {
 		::PostQuitMessage(0);
 	}
 private:
+	ship s;
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hp, LPSTR cmdLine, int nShow)
