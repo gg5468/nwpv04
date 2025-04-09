@@ -7,7 +7,7 @@ public:
 		return "STATIC";
 	}
 	POINT p;
-	RECT parent_rect;
+
 	int size;
 	bool is_moving = false;
 	void set_is_moving(bool flag) {
@@ -23,7 +23,7 @@ public:
 
 		is_moving = flag;
 	}
-	void move(int vk)
+	void move(int vk, RECT parent_rect)
 	{
 		RECT r;
 		GetClientRect(*this, &r);
@@ -53,12 +53,16 @@ class main_window : public vsite::nwp::window
 {
 protected:
 	void on_left_button_down(POINT p) override {
+		s.size = 20;
+		s.p = p;
+
 		if (!s)
 		{
-			s.size = 20;
-			s.p = p;
-			GetClientRect(*this, &s.parent_rect);
 			s.create(*this, WS_CHILD | WS_VISIBLE | WS_BORDER, " X", 0, p.x, p.y, s.size, s.size);
+		}
+		else 
+		{
+			SetWindowPos(s, 0, p.x, p.y, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
 		}
 	}
 	bool is_arrow_key(int vk) {
@@ -72,7 +76,11 @@ protected:
 	void on_key_down(int vk) override {
 		if (is_arrow_key(vk) && s) {
 			s.set_is_moving(true);
-			s.move(vk);
+
+			RECT parent_rect;
+			GetClientRect(*this, &parent_rect);
+			
+			s.move(vk, parent_rect);
 		}
 	}
 	void on_destroy() override {
