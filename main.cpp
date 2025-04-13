@@ -2,14 +2,21 @@
 
 class ship : public vsite::nwp::window
 {
+private:
+	POINT p;
+	int size;
 public:
 	std::string class_name() override {
 		return "STATIC";
 	}
-	POINT p;
+	void set_point(POINT point) {
+		p = point;
+	}
 
-	int size;
-	bool is_moving = false;
+	void set_size(int s) {
+		size = s;
+	}
+
 	void set_is_moving(bool flag) {
 		DWORD style;
 		if (flag) {
@@ -20,10 +27,8 @@ public:
 		}
 		SetWindowLong(*this, GWL_STYLE, style);
 		SetWindowPos(*this, nullptr, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
-
-		is_moving = flag;
 	}
-	void move(int vk, RECT parent_rect)
+	void move(int vk, const RECT& parent_rect)
 	{
 		RECT r;
 		GetClientRect(*this, &r);
@@ -53,12 +58,14 @@ class main_window : public vsite::nwp::window
 {
 protected:
 	void on_left_button_down(POINT p) override {
-		s.size = 20;
-		s.p = p;
+		int size = 20;
+
+		s.set_size(size);
+		s.set_point(p);
 
 		if (!s)
 		{
-			s.create(*this, WS_CHILD | WS_VISIBLE | WS_BORDER, " X", 0, p.x, p.y, s.size, s.size);
+			s.create(*this, WS_CHILD | WS_VISIBLE | WS_BORDER, " X", 0, p.x, p.y, size, size);
 		}
 		else 
 		{
